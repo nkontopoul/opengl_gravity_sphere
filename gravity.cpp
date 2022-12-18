@@ -1,60 +1,78 @@
 #include <GL/glut.h>
-#include <cmath>
+#include <math.h>
 
-const float GRAVITY = 9.81; // gravitational acceleration (m/s^2)
-const float MASS = 1.0; // mass of the sphere (kg)
-const float RADIUS = 0.1; // radius of the sphere (m)
-const float DT = 0.01; // time step (s)
+const double GRAVITY = 9.81; // gravitational acceleration (m/s^2)
+const double DT = 0.01; // time step (s)
 
-// position and velocity of the sphere
-float x = 0.0;
-float y = 0.0;
-float vx = 0.0;
-float vy = 0.0;
+double x = 0.0; // x position of the sphere (m)
+double y = 0.0; // y position of the sphere (m)
+double vy = 0.0; // y velocity of the sphere (m/s)
+
+void drawSphere()
+{
+  // draw the sphere using OpenGL commands
+  glColor3f(1.0, 0.0, 0.0);
+  glutSolidSphere(0.1, 20, 20);
+}
+
+void update()
+{
+  // update the position and velocity of the sphere
+  y += vy * DT;
+  vy -= GRAVITY * DT;
+
+  // if the sphere hits the ground, reverse the direction of the velocity
+  if (y < 0.0) {
+    y = 0.0;
+    vy = -vy;
+  }
+}
 
 void display()
 {
-    // clear the screen
-    glClear(GL_COLOR_BUFFER_BIT);
+  // clear the screen
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // draw the sphere
-    glColor3f(1.0, 1.0, 1.0);
-    glutSolidSphere(RADIUS, 20, 20);
+  // set the camera
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  gluLookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-    // move the sphere
-    x += vx * DT;
-    y += vy * DT;
-    vy -= GRAVITY * DT; // apply gravity
+  // draw the sphere
+  glPushMatrix();
+  glTranslatef(x, y, 0.0);
+  drawSphere();
+  glPopMatrix();
 
-    // check if the sphere has reached the ground
-    if (y < RADIUS)
-    {
-        y = RADIUS;
-        vy = -vy * 0.8; // apply elastic collision with the ground
-    }
-
-    // update the view
-    glLoadIdentity();
-    glTranslatef(x, y, 0.0);
-    glutSwapBuffers();
+  // update the screen
+  glutSwapBuffers();
 }
 
-int main(int argc, char** argv)
+void timer(int value)
 {
-    // initialize OpenGL
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowSize(400, 400);
-    glutCreateWindow("Sphere");
-    glClearColor(0.0, 0.0, 0.0, 0.0);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  // update the position and velocity of the sphere
+  update();
 
-    // set the display function
-    glutDisplayFunc(display);
+  // redisplay the scene
+  glutPostRedisplay();
 
-    // start the main loop
-    glutMainLoop();
-    return 0;
+  // set the timer for the next frame
+  glutTimerFunc(1000 * DT, timer, 0);
+}
+
+int main(int argc, char **argv)
+{
+  // initialize GLUT
+  glutInit(&argc, argv);
+  glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+  glutInitWindowSize(640, 480);
+  glutCreateWindow("Sphere");
+
+  // set up the callbacks
+  glutDisplayFunc(display);
+  glutTimerFunc(1000 * DT, timer, 0);
+
+  // enter the main loop
+  glutMainLoop();
+  return 0;
 }
